@@ -1,5 +1,4 @@
 from typing import Literal
-
 import torch
 from scvi import REGISTRY_KEYS
 from scvi.module.base import (
