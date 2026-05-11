@@ -1,5 +1,4 @@
 from typing import Optional, Sequence
-
 from my_VAE.MojModul import My_VAE
 from my_VAE.MojModul import My_VAE
 import numpy as np
