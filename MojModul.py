@@ -17,21 +17,21 @@ class My_Encoder(torch.nn.Module):
         super().__init__()
         self.neural_net = torch.nn.Sequential(
             torch.nn.Linear(n_input, n_hidden), # if n_hidden is a power of 2 GPU handles it quicker
-            torch.nn.BatchNorm1d(n_hidden),   # normalizira izlaz iz linearne transformacije tako da ima srednju vrijednost 0 i standardnu devijaciju 1, sto pomaze u stabilizaciji i ubrzanju treniranja neuralne mreze - no moving goalpost
+            torch.nn.BatchNorm1d(n_hidden),   # normalizes the output of liear layer so that the input for the next layer is always between 0 and 1  - otherwise it could be like training with a moving goalpost
             torch.nn.ReLU(),
             torch.nn.Linear(n_hidden, n_hidden),
             torch.nn.ReLU(),
             torch.nn.Linear(n_hidden, n_output),
         )
         
-        self.transformation = None #pazi ouaj kurac se primjenjujej tak na kraju, ne između svakog layera
+        self.transformation = None # applies only at the end of neural nett, not in between -- this is why it makes sense to do torch.nn.BatchNorm1d prije ReLU,
         if link_var == "exp":
             self.transformation = torch.exp
         elif link_var == "softmax":
             self.transformation = torch.nn.Softmax(dim=-1)
 
     def forward(self, x: torch.Tensor):
-        output = self.neural_net(x)    # dakle tu se poziva ne neural net koji je upravo definiro gore sa troch.nn.Sequential, i on ce vratiti output koji je linearna transformacija ulaza, a onda se na taj output primjenjuje transformacija koja je odabrana u konstruktoru klase (exp, softmax ili none)
+        output = self.neural_net(x)    # it calls upon before defined neural nett, passes the input and thatn applies transformation only after it
         if self.transformation:
             output = self.transformation(output)
         return output
@@ -55,7 +55,7 @@ class My_Decoder(torch.nn.Module):
             self.transformation = torch.nn.Softmax(dim=-1)
 
     def forward(self, x: torch.Tensor):
-        output = self.neural_net(x)    # dakle tu se poziva ne neural net koji je upravo definiro gore sa troch.nn.Sequential, i on ce vratiti output koji je linearna transformacija ulaza, a onda se na taj output primjenjuje transformacija koja je odabrana u konstruktoru klase (exp, softmax ili none)
+        output = self.neural_net(x)    # it calls upon before defined neural nett, passes the input and thatn applies transformation only after it
         if self.transformation:
             output = self.transformation(output)
         return output
@@ -121,17 +121,9 @@ class My_VAE(BaseModuleClass):
         # we need to multiply by library size to get the mean of the negative binomial, because the mean of the negative binomial is the product of the normalized mean and the library size
         px_rate = px_scale * library_size
         # theta is the variance of the negative binomial, and it is a parameter that is optimized during training, it is not a function of the input data, it is just a random number that is optimized during training
-        theta = torch.exp(self.log_theta) 
+        theta = torch.exp(self.log_theta) # theta is always positive, so we use exp to ensure that it is positive
 
-        '''
-        Shvati da je px_scale jednsotavno array upravo generairan decoderom, možeš ju množit, radit što hoćeš
-        Upravo na isti način generiramo i thetu, prije smo definirali log_theta kao nešto što proizvodi array brojki.
-        
-        Dakle ova f-ja generative() i inferance() samo vrše računanje s funkcijama definiranim u init() - bitno je da skužiš jednostavnost koncepcije
-        
-        KOliko shvaćam mi ništa nismo logaritmirali, ali koristimo to u eskponentu pa se očekuje da je to vrijednost kojom potenciramo log thateta ako je ciljani rezultat potencijajcije theta
-        A ona priča o pozitivnosti je vrlo jednsotavna, e^x > 0 za svaki x element R
-        '''
+
 
         return dict(px_scale=px_scale, px_rate=px_rate, theta=theta) # px stands for "predicted x"
     
@@ -146,7 +138,7 @@ class My_VAE(BaseModuleClass):
         # Calculate likelihood loss
         nb_logits = (px_rate + 1e-8).log() - (theta + 1e-8).log() # log of mean minus log of variance, this is the logit parameter of the negative binomial distribution
         log_likelihood = NegativeBinomial(total_count=theta, logits=nb_logits).log_prob(x).sum(dim=-1) # -1 je jer je to column za GENE, tj sumira preko svih gena #nisam bas skužio zašto je total counts = theta, ali uprincipu to je dipersion
-        #ovdje smo izračunali sumu svih log_likelihooda, a likelihhodi odgovaraju na pitanje; koja je šansa da izvučemo x iz predviđene ditribucije
+        #here we calculated what is the likelihood of observing x from a distribution with mean of x' and varaince theta
 
         #calculate KL Regularization
         prior_dist = Normal(torch.zeros_like(qz_m), torch.ones_like(qz_v)) # prior distribution is standard normal
@@ -159,7 +151,6 @@ class My_VAE(BaseModuleClass):
         we obviously take MEAN across all cells, PAZI elbo NIJE jedan broj nego matrica n_cells x 1, 
         1 jer se za gene već sumiralo vrijednossti posteriora i KL preko latents dakle imali smo log_likelihood(n_cells x n_genes).sum
         te KL(n_cells x n_latent).sum
-        Tad smo računali SUMU jer ...??
         
         '''
         return LossOutput(loss=loss, recon_loss=-torch.mean(log_likelihood), kl_loss=torch.mean(kl_divergence))
