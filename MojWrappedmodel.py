@@ -28,16 +28,16 @@ class MyModel(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         super().__init__(adata)
 
         self.module = VAE(
-            n_input = self.summary_stats["n_vars"], # ovo je broj gena/proteina, tj broj kolona u input podatcima
+            n_input = self.summary_stats["n_vars"], # number of geners in input data
             n_hidden = n_hidden,
-            n_batch = self.summary_stats["n_batch"], # ovo je broj batch-eva, tj broj različitih skupina podataka koje imamo, npr različiti eksperimenti, različiti datumi, različiti laboratoriji itd - kad budem pozivo classmethod setup_anndata ću morat definirati na KOJI točno batch se referiram, npr na condition ili cell type ili nekaj slično
+            n_batch = self.summary_stats["n_batch"], # number of batches, for example; differet experimaetnal setups, dates, labs, methods, ...
             n_latent = n_latent,
             **model_kwargs
         )
 
         self._model_summary_string = f"My VAE model with {n_latent} latent dimensions and {self.summary_stats.n_batch} batches(conditions/samples/whatever)"
 
-        self.init_params_ = self._get_init_params(locals()) # ča su locals? - riječnik svih varijabli dosad definirianih, bit je da sam mogo pojedniačne var napista, ali ideaj je da ako slučajno u budnućnosti ja dodam još neku varijablu u konstruktor, ona će automatski biti spremljena u init_params_ i neće se zaboraviti, a to je važno za reproducibilnost modela, jer ako želimo reproducirati model, trebamo znati sve parametre koji su korišteni za njegovu inicijalizaciju, a ne samo one koje smo ručno napisali u init_params_
+        self.init_params_ = self._get_init_params(locals())
 
     @classmethod
     def setup_anndata(
