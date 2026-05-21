@@ -71,24 +71,7 @@ Pre-trained models are available in:
 
 ---
 
-## 📂 Repository Structure
 
-```
-VAE-implementation-with-SCVI/
-├── base_model/               # Pre-trained base scVI model
-├── my_custom_model/          # Pre-trained custom VAE model
-├── MojModul.py               # Custom VAE implementation
-├── MojWrappedmodel.py        # Wrapper for custom VAE
-├── scvi_Modul.py             # Base scVI VAE (for comparison)
-├── scvi_wrapped.py           # Wrapper for base scVI model
-├── Training_two_models.ipynb # Training script for both models
-├── SCVI_comparing_models.ipynb # Model comparison and UMAP visualization
-├── my_erste_VAE.ipynb         # Initial VAE exploration
-├── kang_counts_25k.h5ad       # Example dataset
-└── env.yml                   # Conda environment file
-```
-
----
 
 ## 🔍 Key Features
 
