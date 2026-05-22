@@ -15,7 +15,7 @@ from scvi.data.fields import (
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
 from scvi.module import VAE
 
-from src.modules.custom_module import My_VAE
+from .custom_module import My_VAE
 
 class MyModel(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
     def __init__(
